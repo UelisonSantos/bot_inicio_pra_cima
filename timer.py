@@ -22,6 +22,7 @@ import logging
 import constants as keys
 
 import time
+import datetime
 import requests
 
 from telegram import Update
@@ -53,10 +54,13 @@ def start(update: Update, _: CallbackContext) -> None:
 
 def alarm(context: CallbackContext) -> None:
     """Send the alarm message."""
-    job = context.job
-    print(job.context[0], job.context[1])
-    message = "The price of {stock} is {price}".format(stock=job.context[1], price=stock_price(job.context[1]))
-    context.bot.send_message(job.context[0], text=message )
+    wday = datetime.datetime.today().weekday()
+    hour = datetime.datetime.today().hour
+    if ((wday < 6) & (hour > 9) & (hour < 18)):
+        job = context.job
+        print(job.context[0], job.context[1])
+        message = "The price of {stock} is {price}".format(stock=job.context[1], price=stock_price(job.context[1]))
+        context.bot.send_message(job.context[0], text=message )
 
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
