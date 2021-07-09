@@ -56,7 +56,7 @@ def alarm(context: CallbackContext) -> None:
     """Send the alarm message."""
     wday = datetime.datetime.today().weekday()
     hour = datetime.datetime.today().hour
-    if ((wday < 6) & (hour > 9) & (hour < 18)):
+    if ((wday < 6) & (hour > 12) & (hour < 21)):
         job = context.job
         print(job.context[0], job.context[1])
         message = "The price of {stock} is {price}".format(stock=job.context[1], price=stock_price(job.context[1]))
