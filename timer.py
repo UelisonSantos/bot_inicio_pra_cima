@@ -38,7 +38,8 @@ logger = logging.getLogger(__name__)
 def stock_price(ticket_tag):
     URL = "https://query1.finance.yahoo.com/v10/finance/quoteSummary/{ticket}.SA?modules=price".format(ticket=ticket_tag)
     print(URL)
-    response = requests.get(URL)
+    headers = {'User-Agent': 'Python'}
+    response = requests.get(URL, headers=headers)
     result_json = response.json()
     price = result_json['quoteSummary']['result'][0]['price']['regularMarketPrice']['raw']
     # timestamp = result_json['quoteSummary']['result'][0]['price']['regularMarketTime']
