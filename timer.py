@@ -76,6 +76,14 @@ def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
 
 def set_timer(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
+    ''' TODO: Here we need to build this json:
+    #   {
+	        "chat_id": "00000",
+	        "stock": "xxxxx",
+	        "timer": "0000"
+        } 
+        and store in a collection in the database
+    '''
     chat_id = update.message.chat_id
     try:
         # args[0] should contain the time for the timer in seconds
@@ -102,6 +110,7 @@ def set_timer(update: Update, context: CallbackContext) -> None:
 
 def unset(update: Update, context: CallbackContext) -> None:
     """Remove the job if the user changed their mind."""
+    '''TODO: here we need to connec in the database and remove all alarms from thi chat_id'''
     chat_id = update.message.chat_id
     job_removed = remove_job_if_exists(str(chat_id), context)
     text = 'Timer successfully cancelled!' if job_removed else 'You have no active timer.'
@@ -112,6 +121,10 @@ def main() -> None:
     """Run bot."""
     # Create the Updater and pass it your bot's token.
     updater = Updater(keys.API_KEY)
+
+    # TODO: Here we need to connect the DB and fetch all alarms to set them
+    # we need to put this in a for for each alarm:
+    # updater.job_queue.run_repeating(alarm, 10, context=[160905640, "OIBR3"], name=str(160905640))
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
