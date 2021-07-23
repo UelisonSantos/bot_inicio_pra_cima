@@ -51,18 +51,22 @@ def stock_price(ticket_tag):
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update: Update, _: CallbackContext) -> None:
-    update.message.reply_text('Hi! Use /set <seconds> <stock_code> to set a timer to receive the stock price')
+    message = "Hi! You can use the follosing commands:\n"
+    message+=  "/set <seconds> <stock_code> to set a alarm to receive the stock price\n"
+    message+=  "/unset <stock_code> to unset the alarms of a stock\n"
+    message+=  "/list to show all your alarms"
+    update.message.reply_text(message)
 
 
 def alarm(context: CallbackContext) -> None:
     """Send the alarm message."""
-    '''wday = datetime.datetime.today().weekday()
+    wday = datetime.datetime.today().weekday()
     hour = datetime.datetime.today().hour
-    if ((wday < 5) & (hour > 12) & (hour < 20)):'''
-    job = context.job
-    print(job.context[0], job.context[1])
-    message = "The price of {stock} is {price}".format(stock=job.context[1], price=stock_price(job.context[1]))
-    context.bot.send_message(job.context[0], text=message )
+    if ((wday < 5) & (hour > 12) & (hour < 20)):
+        job = context.job
+        print(job.context[0], job.context[1])
+        message = "The price of {stock} is {price}".format(stock=job.context[1], price=stock_price(job.context[1]))
+        context.bot.send_message(job.context[0], text=message )
 
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
