@@ -24,6 +24,7 @@ import constants as keys
 import time
 import datetime
 import requests
+import database
 
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
@@ -55,13 +56,13 @@ def start(update: Update, _: CallbackContext) -> None:
 
 def alarm(context: CallbackContext) -> None:
     """Send the alarm message."""
-    wday = datetime.datetime.today().weekday()
+    '''wday = datetime.datetime.today().weekday()
     hour = datetime.datetime.today().hour
-    if ((wday < 5) & (hour > 12) & (hour < 20)):
-        job = context.job
-        print(job.context[0], job.context[1])
-        message = "The price of {stock} is {price}".format(stock=job.context[1], price=stock_price(job.context[1]))
-        context.bot.send_message(job.context[0], text=message )
+    if ((wday < 5) & (hour > 12) & (hour < 20)):'''
+    job = context.job
+    print(job.context[0], job.context[1])
+    message = "The price of {stock} is {price}".format(stock=job.context[1], price=stock_price(job.context[1]))
+    context.bot.send_message(job.context[0], text=message )
 
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
@@ -75,16 +76,8 @@ def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
 
 
 def set_timer(update: Update, context: CallbackContext) -> None:
-    """Add a job to the queue."""
-    ''' TODO: Here we need to build this json:
-    #   {
-	        "chat_id": "00000",
-	        "stock": "xxxxx",
-	        "timer": "0000"
-        } 
-        and store in a collection in the database
-    '''
-    chat_id = update.message.chat_id
+    """Add a job to the queue."""    
+    chat_id = update.message.chat_id    
     try:
         # args[0] should contain the time for the timer in seconds
         due = int(context.args[0])
@@ -104,6 +97,18 @@ def set_timer(update: Update, context: CallbackContext) -> None:
         #    text += ' Old one was removed.'
         #update.message.reply_text(text)
 
+        ''' Store the alarm in the database '''
+        alarmentry = {
+            'chat_id': str(chat_id),
+            'stock': str(stock_tag),
+            'interval': str(due)
+        }
+        result = database.insert_alarm(alarmentry)
+        if (result):
+            update.message.reply_text('Success! Your alarm is registered!')
+        else:
+            logger.error("Erro inserting the alarm in the database.")
+
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /set <seconds> <stock>')
 
@@ -111,10 +116,22 @@ def set_timer(update: Update, context: CallbackContext) -> None:
 def unset(update: Update, context: CallbackContext) -> None:
     """Remove the job if the user changed their mind."""
     '''TODO: here we need to connec in the database and remove all alarms from thi chat_id'''
-    chat_id = update.message.chat_id
-    job_removed = remove_job_if_exists(str(chat_id), context)
-    text = 'Timer successfully cancelled!' if job_removed else 'You have no active timer.'
-    update.message.reply_text(text)
+    try:
+        chat_id = update.message.chat_id
+        stock_tag = context.args[0]
+        alarms = database.get_alarms(chat_id, stock_tag)
+        number_of_active_alarms = alarms.count()
+        if number_of_active_alarms > 0:
+            job_removed = remove_job_if_exists(str(chat_id), context)
+            result = database.delete_alarms(chat_id, stock_tag)
+            if job_removed and result.deleted_count == number_of_active_alarms:
+                update.message.reply_text('I successfully cancelled ' + str(number_of_active_alarms) + ' alarms!')
+            else:
+                update.message.reply_text('Problem cancelling alarms. Try again!')
+        else:
+            update.message.reply_text("I did not find any alarms with the stock " + stock_tag + ".")
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /unset <stock>')
 
 
 def main() -> None:
@@ -122,9 +139,13 @@ def main() -> None:
     # Create the Updater and pass it your bot's token.
     updater = Updater(keys.API_KEY)
 
-    # TODO: Here we need to connect the DB and fetch all alarms to set them
-    # we need to put this in a for for each alarm:
-    # updater.job_queue.run_repeating(alarm, 10, context=[160905640, "OIBR3"], name=str(160905640))
+    # Connect to DB to recriate all alarms
+    alarms = database.get_all_alarms()
+    for dbalarm in alarms:
+        chat_id = int(dbalarm["chat_id"])
+        stock = dbalarm["stock"]
+        interval = int(dbalarm["interval"])
+        updater.job_queue.run_repeating(alarm, interval, context=[chat_id, stock], name=str(chat_id))
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
