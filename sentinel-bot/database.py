@@ -1,4 +1,4 @@
-DB_URI = "mongodb://admin:senhAfortE@127.0.0.1:27017"
+DB_URI = "mongodb://admin:senh4fort3!#@mongo:27017"
 
 from pymongo import MongoClient
 
